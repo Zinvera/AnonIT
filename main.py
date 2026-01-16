@@ -307,10 +307,11 @@ class AnonIT:
     
     def _setup_hotkeys(self) -> None:
         """Register global hotkeys."""
-        # suppress=False ensures modifier keys (Shift, Ctrl, Alt) still work normally
-        # in other applications - only the specific hotkey combo is captured
-        keyboard.add_hotkey('ctrl+shift+e', self._encrypt_selection, suppress=False)
-        keyboard.add_hotkey('ctrl+shift+d', self._decrypt_selection, suppress=False)
+        # trigger_on_release=True ensures the callback runs AFTER keys are released
+        # This prevents conflicts with clipboard operations (ctrl+c/v) and
+        # ensures modifier keys work normally in other applications
+        keyboard.add_hotkey('ctrl+shift+e', self._encrypt_selection, suppress=True, trigger_on_release=True)
+        keyboard.add_hotkey('ctrl+shift+d', self._decrypt_selection, suppress=True, trigger_on_release=True)
         logger.info("Global hotkeys registered")
     
     def _create_tray_menu(self) -> pystray.Menu:
