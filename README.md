@@ -1,6 +1,8 @@
 # AnonIT
 
-A simple encryption tool that lets you encrypt and decrypt text anywhere on your system using hotkeys.
+> **Privacy on top of every messenger.**
+
+A simple encryption tool that lets you encrypt and decrypt text anywhere on your system using hotkeys. WhatsApp, Discord, Telegram, Instagram DMs — doesn't matter. Your messages, your encryption, your keys.
 
 I built this because I wanted a quick way to encrypt sensitive info without opening a separate app every time. Just select text, hit a hotkey, done.
 
