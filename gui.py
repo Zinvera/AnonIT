@@ -1,401 +1,419 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-AnonIT - Dark Theme GUI
-========================
+AnonIT - PyQt6 Dark Theme GUI
+==============================
 
-Simple, clean dark-themed interface for secure text encryption.
-Built with standard Tkinter for maximum compatibility.
+Modern, smooth dark-themed interface for secure text encryption.
+Built with PyQt6 for better rendering and animations.
 
 Author: AnonIT Project
 License: MIT
 """
 
 import logging
-import tkinter as tk
-from tkinter import ttk
 from typing import Callable, Optional
 
-from PIL import ImageTk
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QLabel, QLineEdit, QTextEdit, QPushButton, QFrame, QSizePolicy
+)
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QFont, QIcon, QPixmap
+
+from icons import Icons
 
 logger = logging.getLogger(__name__)
 
-# Color scheme
-COLORS = {
-    'bg_dark': '#0a0a0a',
-    'bg_medium': '#141414',
-    'bg_light': '#1e1e1e',
-    'accent': '#00d4aa',
-    'accent_hover': '#00f5c4',
-    'text': '#ffffff',
-    'text_dim': '#888888',
-    'border': '#2a2a2a',
-    'error': '#ff4757',
-    'success': '#00d4aa'
+# Stylesheet
+DARK_STYLE = """
+QMainWindow, QWidget {
+    background-color: #0a0a0a;
+    color: #ffffff;
+    font-family: 'Segoe UI', sans-serif;
 }
 
+QLabel {
+    color: #ffffff;
+    font-size: 13px;
+}
 
-class AnonITGUI:
-    """
-    Main GUI window for AnonIT encryption tool.
+QLabel#header {
+    color: #00d4aa;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+QLabel#subtitle {
+    color: #888888;
+    font-size: 11px;
+}
+
+QLabel#keyStatus {
+    font-size: 11px;
+}
+
+QLineEdit {
+    background-color: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 10px 12px;
+    color: #ffffff;
+    font-size: 13px;
+    selection-background-color: #00d4aa;
+}
+
+QLineEdit:focus {
+    border-color: #00d4aa;
+}
+
+QTextEdit {
+    background-color: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 10px;
+    color: #ffffff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+    selection-background-color: #00d4aa;
+}
+
+QTextEdit:focus {
+    border-color: #00d4aa;
+}
+
+QPushButton {
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+QPushButton#primary {
+    background-color: #00d4aa;
+    color: #0a0a0a;
+}
+
+QPushButton#primary:hover {
+    background-color: #00f5c4;
+}
+
+QPushButton#primary:pressed {
+    background-color: #00b894;
+}
+
+QPushButton#secondary {
+    background-color: #1e1e1e;
+    color: #ffffff;
+}
+
+QPushButton#secondary:hover {
+    background-color: #2a2a2a;
+}
+
+QPushButton#tertiary {
+    background-color: #1e1e1e;
+    color: #888888;
+}
+
+QPushButton#tertiary:hover {
+    background-color: #2a2a2a;
+    color: #ffffff;
+}
+
+QFrame#statusBar {
+    background-color: #141414;
+    border-top: 1px solid #2a2a2a;
+}
+"""
+
+
+class AnonITGUI(QMainWindow):
+    """Main GUI window for AnonIT encryption tool."""
     
-    Provides:
-        - Key input with visibility toggle
-        - Text area for manual encryption/decryption
-        - Status bar showing key state
-    
-    Args:
-        on_key_change: Called when user sets a new encryption key.
-        on_encrypt: Called to encrypt text, returns encrypted string.
-        on_decrypt: Called to decrypt text, returns decrypted string.
-    """
-    
-    def __init__(self, 
+    def __init__(self,
                  on_key_change: Optional[Callable[[str], None]] = None,
                  on_encrypt: Optional[Callable[[str], Optional[str]]] = None,
                  on_decrypt: Optional[Callable[[str], Optional[str]]] = None):
-        self.window: Optional[tk.Tk] = None
+        
+        self.app: Optional[QApplication] = None
+        self._app_created = False
         self.on_key_change = on_key_change
         self.on_encrypt = on_encrypt
         self.on_decrypt = on_decrypt
+        self._initialized = False
         
-    def show(self) -> None:
-        """Show the GUI window, creating it if necessary."""
-        if self.window is not None:
-            try:
-                self.window.deiconify()
-                self.window.lift()
-                return
-            except tk.TclError:
-                self.window = None
-                
-        self._create_window()
+    def _ensure_app(self):
+        """Ensure QApplication exists."""
+        if QApplication.instance() is None:
+            self.app = QApplication([])
+            self._app_created = True
+        else:
+            self.app = QApplication.instance()
+    
+    def _init_ui(self):
+        """Initialize the UI components."""
+        if self._initialized:
+            return
+            
+        self._ensure_app()
+        super().__init__()
         
-    def _create_window(self) -> None:
-        """Create the main window with dark theme."""
-        self.window = tk.Tk()
-        self.window.title("AnonIT")
-        self.window.geometry("550x480")
-        self.window.configure(bg=COLORS['bg_dark'])
-        self.window.resizable(True, True)
+        self.setWindowTitle("AnonIT")
+        self.setMinimumSize(550, 500)
+        self.resize(550, 500)
+        self.setStyleSheet(DARK_STYLE)
         
         # Set window icon
         try:
             from icon import create_icon
-            icon_img = create_icon(32)
-            self._icon_photo = ImageTk.PhotoImage(icon_img)
-            self.window.iconphoto(True, self._icon_photo)
+            icon_img = create_icon(64)
+            # Convert PIL to QPixmap
+            from io import BytesIO
+            buffer = BytesIO()
+            icon_img.save(buffer, format='PNG')
+            pixmap = QPixmap()
+            pixmap.loadFromData(buffer.getvalue())
+            self.setWindowIcon(QIcon(pixmap))
         except Exception as e:
             logger.warning(f"Could not set icon: {e}")
         
-        # Configure styles
-        self._setup_styles()
+        # Central widget
+        central = QWidget()
+        self.setCentralWidget(central)
+        layout = QVBoxLayout(central)
+        layout.setContentsMargins(24, 24, 24, 0)
+        layout.setSpacing(16)
         
-        # Build UI
-        self._create_header()
-        self._create_key_section()
-        self._create_text_section()
-        self._create_buttons()
-        self._create_status_bar()
+        # Header
+        self._create_header(layout)
         
-        # Handle close
-        self.window.protocol("WM_DELETE_WINDOW", self._on_close)
+        # Key section
+        self._create_key_section(layout)
         
-        logger.info("GUI window created")
-
-
-    def _setup_styles(self) -> None:
-        """Configure ttk styles for dark theme."""
-        style = ttk.Style()
-        style.theme_use('clam')
+        # Text section
+        self._create_text_section(layout)
         
-        # Frame styles
-        style.configure('Dark.TFrame', background=COLORS['bg_dark'])
+        # Buttons
+        self._create_buttons(layout)
         
-        # Label styles
-        style.configure('Dark.TLabel', 
-                       background=COLORS['bg_dark'], 
-                       foreground=COLORS['text'],
-                       font=('Segoe UI', 10))
-        style.configure('Header.TLabel',
-                       background=COLORS['bg_dark'],
-                       foreground=COLORS['accent'],
-                       font=('Segoe UI', 24, 'bold'))
-        style.configure('Subtitle.TLabel',
-                       background=COLORS['bg_dark'],
-                       foreground=COLORS['text_dim'],
-                       font=('Segoe UI', 9))
-
-    def _create_header(self) -> None:
-        """Create the header section with title."""
-        header_frame = ttk.Frame(self.window, style='Dark.TFrame')
-        header_frame.pack(fill='x', padx=20, pady=(20, 10))
+        # Status bar
+        self._create_status_bar(layout)
         
-        title = ttk.Label(header_frame, text="AnonIT", style='Header.TLabel')
-        title.pack(anchor='w')
+        self._initialized = True
+        logger.info("PyQt6 GUI initialized")
+    
+    def _create_header(self, layout: QVBoxLayout):
+        """Create header section."""
+        header = QLabel("AnonIT")
+        header.setObjectName("header")
+        layout.addWidget(header)
         
-        subtitle = ttk.Label(
-            header_frame, 
-            text="Secure AES-256 Encryption • Keys stored in memory only",
-            style='Subtitle.TLabel'
-        )
-        subtitle.pack(anchor='w')
-
-    def _create_key_section(self) -> None:
-        """Create the encryption key input section."""
-        key_frame = ttk.Frame(self.window, style='Dark.TFrame')
-        key_frame.pack(fill='x', padx=20, pady=10)
+        subtitle = QLabel("Secure AES-256 Encryption • Keys stored in memory only")
+        subtitle.setObjectName("subtitle")
+        layout.addWidget(subtitle)
+    
+    def _create_key_section(self, layout: QVBoxLayout):
+        """Create key input section."""
+        key_label = QLabel("Encryption Key")
+        layout.addWidget(key_label)
         
-        key_label = ttk.Label(key_frame, text="Encryption Key", style='Dark.TLabel')
-        key_label.pack(anchor='w', pady=(0, 5))
+        key_row = QHBoxLayout()
+        key_row.setSpacing(8)
         
-        # Key input row
-        input_row = ttk.Frame(key_frame, style='Dark.TFrame')
-        input_row.pack(fill='x')
+        self.key_input = QLineEdit()
+        self.key_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.key_input.setPlaceholderText("Enter your encryption key...")
+        self.key_input.returnPressed.connect(self._set_key)
+        key_row.addWidget(self.key_input)
         
-        self.key_var = tk.StringVar()
-        self.key_entry = tk.Entry(
-            input_row, 
-            textvariable=self.key_var,
-            show="•",
-            font=('Segoe UI', 11),
-            bg=COLORS['bg_medium'],
-            fg=COLORS['text'],
-            insertbackground=COLORS['accent'],
-            relief='flat',
-            highlightthickness=1,
-            highlightbackground=COLORS['border'],
-            highlightcolor=COLORS['accent']
-        )
-        self.key_entry.pack(side='left', fill='x', expand=True, ipady=8)
-        self.key_entry.bind('<Return>', lambda e: self._set_key())
+        self.show_key_btn = QPushButton()
+        self.show_key_btn.setObjectName("secondary")
+        self.show_key_btn.setFixedSize(45, 40)
+        self.show_key_btn.setIcon(Icons.eye(20, "#888888"))
+        self.show_key_btn.setIconSize(QSize(20, 20))
+        self.show_key_btn.setToolTip("View/Hide Key")
+        self.show_key_btn.clicked.connect(self._toggle_key_visibility)
+        self.show_key_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        key_row.addWidget(self.show_key_btn)
         
-        # Show/hide button
-        self.show_key_var = tk.BooleanVar(value=False)
-        show_btn = tk.Button(
-            input_row, 
-            text="👁", 
-            command=self._toggle_key_visibility,
-            bg=COLORS['bg_light'],
-            fg=COLORS['text'],
-            relief='flat',
-            font=('Segoe UI', 12),
-            cursor='hand2'
-        )
-        show_btn.pack(side='left', padx=(5, 0), ipady=4, ipadx=8)
+        set_key_btn = QPushButton("Set Key")
+        set_key_btn.setObjectName("primary")
+        set_key_btn.clicked.connect(self._set_key)
+        set_key_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        key_row.addWidget(set_key_btn)
         
-        set_btn = tk.Button(
-            input_row, 
-            text="Set Key",
-            command=self._set_key,
-            bg=COLORS['accent'],
-            fg=COLORS['bg_dark'],
-            relief='flat',
-            font=('Segoe UI', 10, 'bold'),
-            cursor='hand2'
-        )
-        set_btn.pack(side='left', padx=(5, 0), ipady=6, ipadx=12)
-
-    def _create_text_section(self) -> None:
-        """Create the text input/output section."""
-        text_frame = ttk.Frame(self.window, style='Dark.TFrame')
-        text_frame.pack(fill='both', expand=True, padx=20, pady=10)
+        layout.addLayout(key_row)
+    
+    def _create_text_section(self, layout: QVBoxLayout):
+        """Create text area section."""
+        text_label = QLabel("Text")
+        layout.addWidget(text_label)
         
-        text_label = ttk.Label(text_frame, text="Text", style='Dark.TLabel')
-        text_label.pack(anchor='w', pady=(0, 5))
+        self.text_area = QTextEdit()
+        self.text_area.setPlaceholderText("Enter text to encrypt or paste encrypted text to decrypt...")
+        self.text_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        layout.addWidget(self.text_area)
+    
+    def _create_buttons(self, layout: QVBoxLayout):
+        """Create action buttons."""
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(10)
         
-        # Text area with border
-        text_container = tk.Frame(text_frame, bg=COLORS['border'])
-        text_container.pack(fill='both', expand=True)
+        encrypt_btn = QPushButton(" Encrypt")
+        encrypt_btn.setObjectName("primary")
+        encrypt_btn.setIcon(Icons.lock(18, "#0a0a0a"))
+        encrypt_btn.setIconSize(QSize(18, 18))
+        encrypt_btn.clicked.connect(self._encrypt_text)
+        encrypt_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_row.addWidget(encrypt_btn)
         
-        self.text_area = tk.Text(
-            text_container,
-            wrap='word',
-            font=('Consolas', 11),
-            bg=COLORS['bg_medium'],
-            fg=COLORS['text'],
-            insertbackground=COLORS['accent'],
-            relief='flat',
-            padx=10,
-            pady=10,
-            highlightthickness=0
-        )
-        self.text_area.pack(fill='both', expand=True, padx=1, pady=1)
+        decrypt_btn = QPushButton(" Decrypt")
+        decrypt_btn.setObjectName("secondary")
+        decrypt_btn.setIcon(Icons.unlock(18, "#ffffff"))
+        decrypt_btn.setIconSize(QSize(18, 18))
+        decrypt_btn.clicked.connect(self._decrypt_text)
+        decrypt_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_row.addWidget(decrypt_btn)
         
-        # Scrollbar
-        scrollbar = tk.Scrollbar(
-            self.text_area, 
-            command=self.text_area.yview,
-            bg=COLORS['bg_light'],
-            troughcolor=COLORS['bg_medium'],
-            highlightthickness=0
-        )
-        scrollbar.pack(side='right', fill='y')
-        self.text_area.config(yscrollcommand=scrollbar.set)
-
-    def _create_buttons(self) -> None:
-        """Create the action buttons."""
-        btn_frame = ttk.Frame(self.window, style='Dark.TFrame')
-        btn_frame.pack(fill='x', padx=20, pady=10)
+        btn_row.addStretch()
         
-        encrypt_btn = tk.Button(
-            btn_frame, 
-            text="🔒 Encrypt",
-            command=self._encrypt_text,
-            bg=COLORS['accent'],
-            fg=COLORS['bg_dark'],
-            relief='flat',
-            font=('Segoe UI', 11, 'bold'),
-            cursor='hand2'
-        )
-        encrypt_btn.pack(side='left', ipady=8, ipadx=20)
+        clear_btn = QPushButton(" Clear")
+        clear_btn.setObjectName("tertiary")
+        clear_btn.setIcon(Icons.trash(16, "#888888"))
+        clear_btn.setIconSize(QSize(16, 16))
+        clear_btn.clicked.connect(self._clear_text)
+        clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_row.addWidget(clear_btn)
         
-        decrypt_btn = tk.Button(
-            btn_frame,
-            text="🔓 Decrypt",
-            command=self._decrypt_text,
-            bg=COLORS['bg_light'],
-            fg=COLORS['text'],
-            relief='flat',
-            font=('Segoe UI', 11),
-            cursor='hand2'
-        )
-        decrypt_btn.pack(side='left', padx=(10, 0), ipady=8, ipadx=20)
+        layout.addLayout(btn_row)
+    
+    def _create_status_bar(self, layout: QVBoxLayout):
+        """Create status bar."""
+        status_frame = QFrame()
+        status_frame.setObjectName("statusBar")
+        status_frame.setFixedHeight(45)
+        status_frame.setStyleSheet("""
+            QFrame#statusBar {
+                background-color: #141414;
+                border: 1px solid #2a2a2a;
+                border-radius: 10px;
+                margin: 8px 0px;
+            }
+        """)
         
-        clear_btn = tk.Button(
-            btn_frame,
-            text="Clear",
-            command=self._clear_text,
-            bg=COLORS['bg_light'],
-            fg=COLORS['text_dim'],
-            relief='flat',
-            font=('Segoe UI', 10),
-            cursor='hand2'
-        )
-        clear_btn.pack(side='right', ipady=6, ipadx=15)
-
-    def _create_status_bar(self) -> None:
-        """Create the status bar."""
-        status_frame = tk.Frame(self.window, bg=COLORS['bg_light'])
-        status_frame.pack(fill='x', side='bottom')
+        status_layout = QHBoxLayout(status_frame)
+        status_layout.setContentsMargins(20, 0, 20, 0)
         
-        self.status_var = tk.StringVar(value="Ready • Ctrl+Shift+E to encrypt • Ctrl+Shift+D to decrypt")
-        status_label = tk.Label(
-            status_frame,
-            textvariable=self.status_var,
-            bg=COLORS['bg_light'],
-            fg=COLORS['text_dim'],
-            font=('Segoe UI', 9),
-            pady=8
-        )
-        status_label.pack(side='left', padx=10)
+        self.status_label = QLabel("Ready • Ctrl+Shift+E to encrypt • Ctrl+Shift+D to decrypt")
+        self.status_label.setStyleSheet("color: #666666; font-size: 11px; background: transparent;")
+        status_layout.addWidget(self.status_label)
         
-        # Key status indicator
-        self.key_status_var = tk.StringVar(value="● No key set")
-        self.key_status = tk.Label(
-            status_frame,
-            textvariable=self.key_status_var,
-            bg=COLORS['bg_light'],
-            fg=COLORS['error'],
-            font=('Segoe UI', 9)
-        )
-        self.key_status.pack(side='right', padx=10)
-
-    def _toggle_key_visibility(self) -> None:
-        """Toggle key visibility."""
-        self.show_key_var.set(not self.show_key_var.get())
-        self.key_entry.config(show="" if self.show_key_var.get() else "•")
-
-    def _set_key(self) -> None:
+        status_layout.addStretch()
+        
+        self.key_status = QLabel("● No key set")
+        self.key_status.setObjectName("keyStatus")
+        self.key_status.setStyleSheet("color: #ff4757; font-size: 11px; background: transparent;")
+        status_layout.addWidget(self.key_status)
+        
+        layout.addWidget(status_frame)
+    
+    def _toggle_key_visibility(self):
+        """Toggle password visibility."""
+        if self.key_input.echoMode() == QLineEdit.EchoMode.Password:
+            self.key_input.setEchoMode(QLineEdit.EchoMode.Normal)
+            self.show_key_btn.setIcon(Icons.eye_off(20, "#00d4aa"))
+        else:
+            self.key_input.setEchoMode(QLineEdit.EchoMode.Password)
+            self.show_key_btn.setIcon(Icons.eye(20, "#888888"))
+    
+    def _set_key(self):
         """Set the encryption key."""
-        key = self.key_var.get()
+        key = self.key_input.text()
         if not key:
-            self.status_var.set("⚠ Please enter an encryption key")
+            self.status_label.setText("⚠ Please enter an encryption key")
             return
         if len(key) < 4:
-            self.status_var.set("⚠ Key must be at least 4 characters")
+            self.status_label.setText("⚠ Key must be at least 4 characters")
             return
         
-        # Call the callback
         if self.on_key_change:
             self.on_key_change(key)
         
-        # Update UI
-        self.key_status_var.set("● Key active")
-        self.key_status.config(fg=COLORS['success'])
-        self.status_var.set("Encryption key set successfully")
+        self.key_status.setText("● Key active")
+        self.key_status.setStyleSheet("color: #00d4aa;")
+        self.status_label.setText("Encryption key set successfully")
         
-        # Clear key from entry for security
-        self.key_var.set("")
-        self.key_entry.config(show="•")
+        self.key_input.clear()
+        self.key_input.setEchoMode(QLineEdit.EchoMode.Password)
         
         logger.info("Key set via GUI")
-
-    def _encrypt_text(self) -> None:
-        """Encrypt the text in the text area."""
-        text = self.text_area.get("1.0", "end-1c")
+    
+    def _encrypt_text(self):
+        """Encrypt text in text area."""
+        text = self.text_area.toPlainText()
         if not text.strip():
-            self.status_var.set("⚠ No text to encrypt")
+            self.status_label.setText("⚠ No text to encrypt")
             return
         
         if self.on_encrypt:
             result = self.on_encrypt(text)
             if result:
-                self.text_area.delete("1.0", "end")
-                self.text_area.insert("1.0", result)
-                self.status_var.set("Text encrypted successfully")
+                self.text_area.setPlainText(result)
+                self.status_label.setText("Text encrypted successfully")
             else:
-                self.status_var.set("⚠ Encryption failed - is key set?")
-        else:
-            self.status_var.set("⚠ Encryption not available")
-
-    def _decrypt_text(self) -> None:
-        """Decrypt the text in the text area."""
-        text = self.text_area.get("1.0", "end-1c")
+                self.status_label.setText("⚠ Encryption failed - is key set?")
+    
+    def _decrypt_text(self):
+        """Decrypt text in text area."""
+        text = self.text_area.toPlainText()
         if not text.strip():
-            self.status_var.set("⚠ No text to decrypt")
+            self.status_label.setText("⚠ No text to decrypt")
             return
         
         if self.on_decrypt:
             result = self.on_decrypt(text)
             if result:
-                self.text_area.delete("1.0", "end")
-                self.text_area.insert("1.0", result)
-                self.status_var.set("Text decrypted successfully")
+                self.text_area.setPlainText(result)
+                self.status_label.setText("Text decrypted successfully")
             else:
-                self.status_var.set("⚠ Decryption failed - wrong key?")
-        else:
-            self.status_var.set("⚠ Decryption not available")
-
-    def _clear_text(self) -> None:
-        """Clear the text area."""
-        self.text_area.delete("1.0", "end")
-        self.status_var.set("Ready")
-
-    def _on_close(self) -> None:
-        """Hide window instead of closing."""
-        self.window.withdraw()
-
-    def run(self) -> None:
-        """Start the GUI mainloop."""
-        if self.window:
-            self.window.mainloop()
+                self.status_label.setText("⚠ Decryption failed - wrong key?")
     
-    def mainloop(self) -> None:
-        """Alias for run() - compatibility with CTk."""
-        self.show()
-        self.run()
+    def _clear_text(self):
+        """Clear text area."""
+        self.text_area.clear()
+        self.status_label.setText("Ready")
     
-    def quit(self) -> None:
+    def show(self):
+        """Show the window."""
+        self._init_ui()
+        super().show()
+        self.raise_()
+        self.activateWindow()
+    
+    def mainloop(self):
+        """Start the application event loop."""
+        self._init_ui()
+        super().show()
+        if self._app_created and self.app:
+            self.app.exec()
+    
+    def quit(self):
         """Quit the application."""
-        if self.window:
-            self.window.quit()
+        if self.app:
+            self.app.quit()
+    
+    def closeEvent(self, event):
+        """Hide instead of close."""
+        event.ignore()
+        self.hide()
 
 
 # Standalone testing
 if __name__ == "__main__":
     def test_encrypt(text):
-        return f"ANON[test:{len(text)}chars]"
+        return f"ANON[encrypted:{len(text)}]IT"
     
     def test_decrypt(text):
         return "Decrypted content"

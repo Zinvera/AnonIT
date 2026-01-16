@@ -223,7 +223,7 @@ class AnonIT:
         1. Clear clipboard
         2. Copy selected text (Ctrl+C)
         3. Decrypt the text
-        4. Paste decrypted text (Ctrl+V)
+        4. Show popup with decrypted text (no replacement)
         
         If no key is set, opens the GUI for key entry.
         """
@@ -251,13 +251,154 @@ class AnonIT:
                     return
                 
                 decrypted = decrypt(text)
-                pyperclip.copy(decrypted)
-                keyboard.send('ctrl+v')
+                
+                # Show popup instead of replacing text
+                self._show_decrypt_popup(decrypted)
                 
                 logger.info(f"Hotkey decryption: {len(text)} -> {len(decrypted)} chars")
                 
             except Exception as e:
                 logger.error(f"Hotkey decryption failed: {e}")
+    
+    def _show_decrypt_popup(self, text: str) -> None:
+        """Show a small popup window with decrypted text in a separate thread."""
+        
+        def create_popup():
+            from PyQt6.QtWidgets import (
+                QApplication, QWidget, QVBoxLayout, QHBoxLayout,
+                QLabel, QTextEdit, QPushButton
+            )
+            from PyQt6.QtCore import Qt, QTimer, QSize
+            from PyQt6.QtGui import QFont, QGuiApplication
+            from icons import Icons
+            
+            app = QApplication([])
+            
+            # Stylesheet
+            style = """
+            QWidget {
+                background-color: #0a0a0a;
+                color: #ffffff;
+                font-family: 'Segoe UI', sans-serif;
+            }
+            QLabel#header {
+                color: #00d4aa;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QTextEdit {
+                background-color: #1e1e1e;
+                border: 1px solid #2a2a2a;
+                border-radius: 8px;
+                padding: 12px;
+                color: #ffffff;
+                font-family: 'Consolas', monospace;
+                font-size: 12px;
+                selection-background-color: #00d4aa;
+            }
+            QPushButton#copy {
+                background-color: #00d4aa;
+                color: #0a0a0a;
+                border: none;
+                border-radius: 6px;
+                padding: 10px 24px;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            QPushButton#copy:hover {
+                background-color: #00f5c4;
+            }
+            QPushButton#close {
+                background-color: #2a2a2a;
+                color: #888888;
+                border: none;
+                border-radius: 6px;
+                padding: 10px 24px;
+                font-size: 12px;
+            }
+            QPushButton#close:hover {
+                background-color: #3a3a3a;
+                color: #ffffff;
+            }
+            """
+            
+            popup = QWidget()
+            popup.setWindowTitle("Decrypted")
+            popup.setStyleSheet(style)
+            popup.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Window)
+            
+            # Size based on content
+            width = min(max(400, len(text) * 7), 600)
+            height = min(max(200, text.count('\n') * 25 + 150), 450)
+            popup.resize(width, height)
+            
+            # Center on screen
+            screen = QGuiApplication.primaryScreen().geometry()
+            x = (screen.width() - width) // 2
+            y = (screen.height() - height) // 2
+            popup.move(x, y)
+            
+            layout = QVBoxLayout(popup)
+            layout.setContentsMargins(20, 20, 20, 20)
+            layout.setSpacing(12)
+            
+            # Header with icon
+            header_layout = QHBoxLayout()
+            header_icon = QLabel()
+            header_icon.setPixmap(Icons.unlock(20, "#00d4aa").pixmap(QSize(20, 20)))
+            header_layout.addWidget(header_icon)
+            header = QLabel("Decrypted Message")
+            header.setObjectName("header")
+            header_layout.addWidget(header)
+            header_layout.addStretch()
+            layout.addLayout(header_layout)
+            
+            # Text area
+            text_area = QTextEdit()
+            text_area.setPlainText(text)
+            text_area.setReadOnly(False)
+            layout.addWidget(text_area)
+            
+            # Buttons
+            btn_layout = QHBoxLayout()
+            btn_layout.setSpacing(10)
+            
+            copy_btn = QPushButton(" Copy")
+            copy_btn.setObjectName("copy")
+            copy_btn.setIcon(Icons.copy(16, "#0a0a0a"))
+            copy_btn.setIconSize(QSize(16, 16))
+            copy_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            
+            def copy_text():
+                app.clipboard().setText(text)
+                copy_btn.setIcon(Icons.check(16, "#0a0a0a"))
+                copy_btn.setText(" Copied!")
+                QTimer.singleShot(1000, lambda: (copy_btn.setIcon(Icons.copy(16, "#0a0a0a")), copy_btn.setText(" Copy")))
+            
+            copy_btn.clicked.connect(copy_text)
+            btn_layout.addWidget(copy_btn)
+            
+            btn_layout.addStretch()
+            
+            close_btn = QPushButton(" Close")
+            close_btn.setObjectName("close")
+            close_btn.setIcon(Icons.x(16, "#888888"))
+            close_btn.setIconSize(QSize(16, 16))
+            close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            close_btn.clicked.connect(popup.close)
+            btn_layout.addWidget(close_btn)
+            
+            layout.addLayout(btn_layout)
+            
+            # Auto-close after 30 seconds
+            QTimer.singleShot(30000, popup.close)
+            
+            popup.show()
+            app.exec()
+        
+        # Run popup in separate thread to not block hotkeys
+        popup_thread = threading.Thread(target=create_popup, daemon=True)
+        popup_thread.start()
     
     def _show_gui(self) -> None:
         """Show the GUI window."""
@@ -267,43 +408,43 @@ class AnonIT:
     def _cleanup(self) -> None:
         """
         Clean up resources on application exit.
-        
-        Ensures:
-        - Encryption keys are securely wiped
-        - Keyboard hooks are removed
-        - Tray icon is removed
+        Fast cleanup - skip slow memory operations.
         """
         logger.info("Cleaning up...")
         
-        try:
-            clear_encryption_key()
-        except Exception as e:
-            logger.error(f"Key cleanup error: {e}")
-        
+        # Quick keyboard unhook first
         try:
             keyboard.unhook_all()
-        except Exception as e:
-            logger.error(f"Keyboard cleanup error: {e}")
+        except Exception:
+            pass
+        
+        # Fast key clear (skip slow memory protection)
+        try:
+            clear_encryption_key()
+        except Exception:
+            pass
         
         logger.info("Cleanup complete")
     
     def _quit_app(self) -> None:
-        """Exit the application gracefully."""
-        logger.info("Shutting down...")
-        self.running = False
-        self._cleanup()
+        """Exit the application immediately."""
+        import os
         
-        if self.tray_icon:
-            try:
-                self.tray_icon.stop()
-            except Exception:
-                pass
+        # Unhook keyboard first (fast)
+        try:
+            keyboard.unhook_all()
+        except Exception:
+            pass
         
-        if self.gui:
-            try:
-                self.gui.quit()
-            except Exception:
-                pass
+        # Clear key from memory (fast)
+        try:
+            clear_encryption_key()
+        except Exception:
+            pass
+        
+        # Force exit immediately - skip all slow cleanup
+        # pystray.stop() and PyQt6 cleanup are too slow
+        os._exit(0)
     
     def _setup_hotkeys(self) -> None:
         """Register global hotkeys."""
