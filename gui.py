@@ -342,7 +342,7 @@ class AnonITGUI(QMainWindow):
             self.on_key_change(key)
         
         self.key_status.setText("● Key active")
-        self.key_status.setStyleSheet("color: #00d4aa;")
+        self.key_status.setStyleSheet("color: #00d4aa; font-size: 11px; background: transparent;")
         self.status_label.setText("Encryption key set successfully")
         
         self.key_input.clear()
