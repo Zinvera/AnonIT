@@ -2,14 +2,16 @@
 
 > **Privacy on top of every messenger.**
 
-A simple encryption tool with a modern dark-themed GUI. WhatsApp, Discord, Telegram, Instagram DMs — doesn't matter. Your messages, your encryption, your keys.
+A simple encryption tool with a modern dark-themed GUI and F8 hotkey. WhatsApp, Discord, Telegram, Instagram DMs — doesn't matter. Your messages, your encryption, your keys.
 
 I built this because I wanted a quick way to encrypt sensitive info without relying on third-party websites.
 
 ## What it does
 
-- Encrypt and decrypt text using the GUI
-- Copy encrypted/decrypted text with one click
+- **F8 hotkey** — Select text anywhere, press F8:
+  - Normal text → gets encrypted and pasted back
+  - Encrypted text → gets decrypted (shown in popup)
+- GUI for manual encrypt/decrypt
 - Runs quietly in your system tray
 
 ## Security
@@ -32,8 +34,9 @@ Or grab the pre-built exe from [Releases](https://github.com/Zinvera/AnonIT/rele
 
 1. Start AnonIT
 2. Enter your encryption key in the GUI
-3. Paste or type text to encrypt/decrypt
-4. Use the buttons to process and copy the result
+3. Select any text and press **F8**:
+   - Plain text → encrypted and pasted
+   - Encrypted text → decrypted and shown in popup
 
 The app sits in your system tray when minimized.
 
@@ -55,6 +58,7 @@ The exe will be in the `dist` folder.
 
 - `pycryptodome` - AES encryption
 - `argon2-cffi` - Key derivation
+- `keyboard` - F8 hotkey
 - `pyperclip` - Clipboard access
 - `pystray` - System tray icon
 - `Pillow` - Icon rendering
