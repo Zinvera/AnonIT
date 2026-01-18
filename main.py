@@ -17,12 +17,12 @@ Features:
 Usage:
     1. Start the application
     2. Enter your encryption key in the GUI
-    3. Select text anywhere and press Ctrl+Shift+E to encrypt
-    4. Select encrypted text and press Ctrl+Shift+D to decrypt
+    3. Select text anywhere and press Ctrl+Alt+E to encrypt
+    4. Select encrypted text and press Ctrl+Alt+D to decrypt
 
 Hotkeys:
-    Ctrl+Shift+E - Encrypt selected text
-    Ctrl+Shift+D - Decrypt selected text
+    Ctrl+Alt+E - Encrypt selected text
+    Ctrl+Alt+D - Decrypt selected text
 
 Security Notes:
     - Keys are stored only in memory, never on disk
@@ -41,10 +41,10 @@ import threading
 import time
 from typing import Optional
 
-import keyboard
 import pyperclip
 import pystray
 from PIL import Image
+from pynput.keyboard import Key, Controller, GlobalHotKeys
 
 from crypto import (
     encrypt, decrypt, is_encrypted, 
@@ -94,6 +94,8 @@ class AnonIT:
         self.tray_icon: Optional[pystray.Icon] = None
         self.running = True
         self._lock = threading.Lock()
+        self.kb_controller = Controller()
+        self.hotkey_listener = None
         
         # Register cleanup handler for graceful shutdown
         atexit.register(self._cleanup)
@@ -184,14 +186,15 @@ class AnonIT:
         
         with self._lock:
             try:
-                # Small delay to let hotkey release
+                # Small delay to ensure hotkey doesn't interfere
                 time.sleep(HOTKEY_DELAY)
                 
                 # Clear clipboard to detect if copy succeeds
                 pyperclip.copy('')
                 
                 # Copy selected text
-                keyboard.send('ctrl+c')
+                with self.kb_controller.pressed(Key.ctrl):
+                    self.kb_controller.tap('c')
                 time.sleep(CLIPBOARD_DELAY)
                 
                 text = pyperclip.paste()
@@ -208,7 +211,9 @@ class AnonIT:
                 # Encrypt and paste
                 encrypted = encrypt(text)
                 pyperclip.copy(encrypted)
-                keyboard.send('ctrl+v')
+                
+                with self.kb_controller.pressed(Key.ctrl):
+                    self.kb_controller.tap('v')
                 
                 logger.info(f"Hotkey encryption: {len(text)} -> {len(encrypted)} chars")
                 
@@ -237,7 +242,8 @@ class AnonIT:
                 time.sleep(HOTKEY_DELAY)
                 
                 pyperclip.copy('')
-                keyboard.send('ctrl+c')
+                with self.kb_controller.pressed(Key.ctrl):
+                    self.kb_controller.tap('c')
                 time.sleep(CLIPBOARD_DELAY)
                 
                 text = pyperclip.paste()
@@ -412,11 +418,9 @@ class AnonIT:
         """
         logger.info("Cleaning up...")
         
-        # Quick keyboard unhook first
-        try:
-            keyboard.unhook_all()
-        except Exception:
-            pass
+        # Stop hotkey listener
+        if self.hotkey_listener:
+            self.hotkey_listener.stop()
         
         # Fast key clear (skip slow memory protection)
         try:
@@ -430,11 +434,9 @@ class AnonIT:
         """Exit the application immediately."""
         import os
         
-        # Unhook keyboard first (fast)
-        try:
-            keyboard.unhook_all()
-        except Exception:
-            pass
+        # Stop hotkey listener
+        if hasattr(self, 'hotkey_listener') and self.hotkey_listener:
+            self.hotkey_listener.stop()
         
         # Clear key from memory (fast)
         try:
@@ -447,13 +449,18 @@ class AnonIT:
         os._exit(0)
     
     def _setup_hotkeys(self) -> None:
-        """Register global hotkeys."""
-        # trigger_on_release=True ensures the callback runs AFTER keys are released
-        # This prevents conflicts with clipboard operations (ctrl+c/v) and
-        # ensures modifier keys work normally in other applications
-        keyboard.add_hotkey('ctrl+shift+e', self._encrypt_selection, suppress=True, trigger_on_release=True)
-        keyboard.add_hotkey('ctrl+shift+d', self._decrypt_selection, suppress=True, trigger_on_release=True)
-        logger.info("Global hotkeys registered")
+        """Register global hotkeys using pynput."""
+        # Define hotkey map
+        # pynput runs in a separate thread so we don't need to worry about blocking main thread
+        # causing lag. It also doesn't suppress keys by default which fixes the shift lag.
+        self.hotkey_map = {
+            '<ctrl>+<alt>+e': self._encrypt_selection,
+            '<ctrl>+<alt>+d': self._decrypt_selection
+        }
+        
+        self.hotkey_listener = GlobalHotKeys(self.hotkey_map)
+        self.hotkey_listener.start()
+        logger.info("Global hotkeys registered via pynput")
     
     def _create_tray_menu(self) -> pystray.Menu:
         """Create the system tray context menu."""
@@ -505,8 +512,8 @@ class AnonIT:
         print("  AnonIT - Secure Text Encryption")
         print("=" * 50)
         print("  Hotkeys:")
-        print("    Ctrl+Shift+E  →  Encrypt selected text")
-        print("    Ctrl+Shift+D  →  Decrypt selected text")
+        print("    Ctrl+Alt+E  →  Encrypt selected text")
+        print("    Ctrl+Alt+D  →  Decrypt selected text")
         print("")
         print("  Keys are stored in memory only.")
         print("  They will be securely wiped on exit.")
