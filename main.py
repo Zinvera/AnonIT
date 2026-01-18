@@ -112,81 +112,70 @@ class AnonIT:
                 logger.error(f"F8 error: {e}")
     
     def _show_decrypt_popup(self, text: str) -> None:
-        from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, QPushButton
-        from PyQt6.QtCore import Qt, QTimer, QSize
-        from PyQt6.QtGui import QGuiApplication
-        from icons import Icons
+        import tkinter as tk
+        from tkinter import scrolledtext
         
         def show_popup():
-            app = QApplication.instance() or QApplication([])
+            root = tk.Tk()
+            root.title("🔓 Decrypted")
+            root.configure(bg='#0a0a0a')
+            root.geometry("520x400")
+            root.attributes('-topmost', True)
             
-            style = """
-            QWidget { background-color: #0a0a0a; color: #ffffff; font-family: 'Segoe UI', sans-serif; }
-            QLabel#header { color: #00d4aa; font-size: 20px; font-weight: bold; }
-            QTextEdit { background-color: #141414; border: 1px solid #2a2a2a; border-radius: 6px; padding: 12px; color: #ffffff; font-family: 'Consolas', monospace; font-size: 12px; selection-background-color: #00d4aa; }
-            QPushButton { border: none; border-radius: 6px; padding: 12px 28px; font-size: 12px; font-weight: bold; }
-            QPushButton#primary { background-color: #00d4aa; color: #0a0a0a; }
-            QPushButton#primary:hover { background-color: #00f5c4; }
-            QPushButton#secondary { background-color: #1e1e1e; color: #888888; }
-            QPushButton#secondary:hover { background-color: #2a2a2a; color: #ffffff; }
-            """
+            # Center on screen
+            root.update_idletasks()
+            x = (root.winfo_screenwidth() - 520) // 2
+            y = (root.winfo_screenheight() - 400) // 2
+            root.geometry(f"+{x}+{y}")
             
-            popup = QWidget()
-            popup.setWindowTitle("Decrypted")
-            popup.setStyleSheet(style)
-            popup.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Window)
-            popup.resize(520, 400)
+            # Header
+            header = tk.Label(root, text="🔓 Decrypted Message", 
+                             font=('Segoe UI', 14, 'bold'),
+                             fg='#00d4aa', bg='#0a0a0a')
+            header.pack(pady=(20, 10), padx=20, anchor='w')
             
-            layout = QVBoxLayout(popup)
-            layout.setContentsMargins(24, 24, 24, 24)
-            layout.setSpacing(16)
+            # Text area container (for border)
+            text_frame = tk.Frame(root, bg='#2a2a2a', padx=1, pady=1)
+            text_frame.pack(padx=20, pady=(0, 20), fill='both', expand=True)
             
-            hdr_layout = QHBoxLayout()
-            hdr_icon = QLabel()
-            hdr_icon.setPixmap(Icons.unlock(24, "#00d4aa").pixmap(QSize(24, 24)))
-            hdr_layout.addWidget(hdr_icon)
-            header = QLabel("Decrypted Message")
-            header.setObjectName("header")
-            hdr_layout.addWidget(header)
-            hdr_layout.addStretch()
-            layout.addLayout(hdr_layout)
+            text_area = scrolledtext.ScrolledText(text_frame, wrap=tk.WORD,
+                                                   font=('Consolas', 11),
+                                                   bg='#141414', fg='#ffffff',
+                                                   insertbackground='#ffffff',
+                                                   selectbackground='#00d4aa',
+                                                   relief='flat', bd=10)
+            text_area.pack(fill='both', expand=True)
+            text_area.insert('1.0', text)
+            # Make read-only after insert if desired, but editable is usually fine for copying
             
-            text_area = QTextEdit()
-            text_area.setPlainText(text)
-            layout.addWidget(text_area)
-            
-            btn_layout = QHBoxLayout()
-            copy_btn = QPushButton(" Copy")
-            copy_btn.setObjectName("primary")
-            copy_btn.setIcon(Icons.copy(18, "#0a0a0a"))
-            copy_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            # Button frame
+            btn_frame = tk.Frame(root, bg='#0a0a0a')
+            btn_frame.pack(padx=20, pady=(0, 20), fill='x')
             
             def copy_text():
-                app.clipboard().setText(text)
-                copy_btn.setText(" Copied!")
-                QTimer.singleShot(1500, lambda: copy_btn.setText(" Copy"))
+                root.clipboard_clear()
+                root.clipboard_append(text)
+                copy_btn.config(text="✓ Copied!")
+                root.after(1500, lambda: copy_btn.config(text="📋 Copy"))
             
-            copy_btn.clicked.connect(copy_text)
-            btn_layout.addWidget(copy_btn)
-            btn_layout.addStretch()
+            copy_btn = tk.Button(btn_frame, text="📋 Copy", command=copy_text,
+                                font=('Segoe UI', 10, 'bold'),
+                                bg='#00d4aa', fg='#0a0a0a',
+                                activebackground='#00f5c4', activeforeground='#0a0a0a',
+                                relief='flat', padx=20, pady=8,
+                                cursor='hand2')
+            copy_btn.pack(side='left')
             
-            close_btn = QPushButton(" Close")
-            close_btn.setObjectName("secondary")
-            close_btn.clicked.connect(popup.close)
-            btn_layout.addWidget(close_btn)
-            layout.addLayout(btn_layout)
+            close_btn = tk.Button(btn_frame, text="✕ Close", command=root.destroy,
+                                 font=('Segoe UI', 10),
+                                 bg='#1e1e1e', fg='#aaaaaa',
+                                 activebackground='#2a2a2a', activeforeground='#ffffff',
+                                 relief='flat', padx=20, pady=8,
+                                 cursor='hand2')
+            close_btn.pack(side='right')
             
-            QTimer.singleShot(60000, popup.close)
-            
-            screen = QGuiApplication.primaryScreen().geometry()
-            popup.move((screen.width() - popup.width()) // 2, (screen.height() - popup.height()) // 2)
-            
-            popup.show()
-            popup.raise_()
-            popup.activateWindow()
-            
-            if QApplication.instance() and not hasattr(app, '_main_running'):
-                app.exec()
+            root.after(60000, root.destroy)
+            root.mainloop()
         
         threading.Thread(target=show_popup, daemon=True).start()
     

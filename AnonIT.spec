@@ -11,7 +11,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('icon.ico', '.')],
+    datas=[('icon.ico', '.'), ('iconmain.png', '.')],
     hiddenimports=[
         'pystray._win32',
         'PyQt6',
@@ -40,7 +40,6 @@ a = Analysis(
         'pytest',
         'sphinx',
         'docutils',
-        'tkinter',
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
