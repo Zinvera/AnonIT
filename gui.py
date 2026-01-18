@@ -306,7 +306,7 @@ class AnonITGUI(QMainWindow):
         status_layout = QHBoxLayout(status_frame)
         status_layout.setContentsMargins(20, 0, 20, 0)
         
-        self.status_label = QLabel("Ready • Ctrl+Shift+E to encrypt • Ctrl+Shift+D to decrypt")
+        self.status_label = QLabel("Ready • Press F8 to Encrypt/Decrypt selected text")
         self.status_label.setStyleSheet("color: #666666; font-size: 11px; background: transparent;")
         status_layout.addWidget(self.status_label)
         
