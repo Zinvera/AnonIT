@@ -26,7 +26,7 @@ Thread Safety:
 
 Author: AnonIT Project
 License: MIT
-Version: 1.0.1
+Version: 1.4.0
 """
 
 import base64
