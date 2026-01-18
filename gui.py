@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QTextEdit, QPushButton, QFrame, QSizePolicy
 )
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtCore import Qt, QSize, QTimer
 from PyQt6.QtGui import QFont, QIcon, QPixmap
 
 from icons import Icons
@@ -85,7 +85,7 @@ QTextEdit:focus {
 QPushButton {
     border: none;
     border-radius: 6px;
-    padding: 10px 20px;
+    padding: 10px 15px;
     font-size: 12px;
     font-weight: bold;
 }
@@ -161,8 +161,8 @@ class AnonITGUI(QMainWindow):
         super().__init__()
         
         self.setWindowTitle("AnonIT")
-        self.setMinimumSize(550, 500)
-        self.resize(550, 500)
+        self.setMinimumSize(600, 500)
+        self.resize(600, 500)
         self.setStyleSheet(DARK_STYLE)
         
         # Set window icon
@@ -277,6 +277,14 @@ class AnonITGUI(QMainWindow):
         decrypt_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_row.addWidget(decrypt_btn)
         
+        self.copy_btn = QPushButton(" Copy")
+        self.copy_btn.setObjectName("secondary")
+        self.copy_btn.setIcon(Icons.copy(18, "#ffffff"))
+        self.copy_btn.setIconSize(QSize(18, 18))
+        self.copy_btn.clicked.connect(self._copy_text)
+        self.copy_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_row.addWidget(self.copy_btn)
+        
         btn_row.addStretch()
         
         clear_btn = QPushButton(" Clear")
@@ -379,6 +387,30 @@ class AnonITGUI(QMainWindow):
                 self.status_label.setText("Text decrypted successfully")
             else:
                 self.status_label.setText("⚠ Decryption failed - wrong key?")
+    
+    def _copy_text(self):
+        """Copy text to clipboard."""
+        text = self.text_area.toPlainText()
+        if not text:
+            self.status_label.setText("⚠ Nothing to copy")
+            return
+            
+        clipboard = QApplication.clipboard()
+        clipboard.setText(text)
+        
+        self.status_label.setText("Content copied to clipboard")
+        
+        # Visual feedback
+        self.copy_btn.setText(" Copied!")
+        self.copy_btn.setIcon(Icons.check(18, "#00d4aa"))
+        self.copy_btn.setStyleSheet("color: #00d4aa;")
+        
+        def restore():
+            self.copy_btn.setText(" Copy")
+            self.copy_btn.setIcon(Icons.copy(18, "#ffffff"))
+            self.copy_btn.setStyleSheet("")
+        
+        QTimer.singleShot(1500, restore)
     
     def _clear_text(self):
         """Clear text area."""

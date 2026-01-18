@@ -4,6 +4,8 @@
 AnonIT - Secure Text Encryption Tool
 """
 
+__version__ = "1.4.1"
+
 import atexit
 import logging
 import sys
@@ -119,13 +121,13 @@ class AnonIT:
             root = tk.Tk()
             root.title("🔓 Decrypted")
             root.configure(bg='#0a0a0a')
-            root.geometry("520x400")
+            root.geometry("800x800")
             root.attributes('-topmost', True)
             
             # Center on screen
             root.update_idletasks()
-            x = (root.winfo_screenwidth() - 520) // 2
-            y = (root.winfo_screenheight() - 400) // 2
+            x = (root.winfo_screenwidth() - 800) // 2
+            y = (root.winfo_screenheight() - 800) // 2
             root.geometry(f"+{x}+{y}")
             
             # Header
