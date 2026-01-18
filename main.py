@@ -4,25 +4,18 @@
 AnonIT - Secure Text Encryption Tool
 =====================================
 
-A system-wide encryption utility that allows you to encrypt and decrypt
-text anywhere using global hotkeys.
+A secure encryption utility with a modern dark-themed GUI.
 
 Features:
     - AES-256-GCM authenticated encryption
     - Argon2id password-based key derivation
-    - Global hotkeys work in any application
     - System tray integration
     - Modern dark-themed GUI
 
 Usage:
     1. Start the application
     2. Enter your encryption key in the GUI
-    3. Select text anywhere and press Ctrl+Alt+E to encrypt
-    4. Select encrypted text and press Ctrl+Alt+D to decrypt
-
-Hotkeys:
-    Ctrl+Alt+E - Encrypt selected text
-    Ctrl+Alt+D - Decrypt selected text
+    3. Use the GUI to encrypt and decrypt text
 
 Security Notes:
     - Keys are stored only in memory, never on disk
@@ -31,7 +24,7 @@ Security Notes:
 
 Author: AnonIT Project
 License: MIT
-Version: 1.0.0
+Version: 1.1.0
 """
 
 import atexit
@@ -44,7 +37,6 @@ from typing import Optional
 import pyperclip
 import pystray
 from PIL import Image
-from pynput.keyboard import Key, Controller, GlobalHotKeys
 
 from crypto import (
     encrypt, decrypt, is_encrypted, 
@@ -60,19 +52,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Constants
-CLIPBOARD_DELAY = 0.2  # Seconds to wait for clipboard operations
-HOTKEY_DELAY = 0.05    # Seconds to wait after hotkey press
-
 
 class AnonIT:
     """
     Main application controller for AnonIT.
     
     Coordinates between:
-    - GUI window for key entry and manual encryption
+    - GUI window for key entry and encryption/decryption
     - System tray icon for background operation
-    - Global hotkeys for system-wide encryption
     
     Attributes:
         gui: The main GUI window instance.
@@ -83,7 +70,6 @@ class AnonIT:
         The application runs multiple threads:
         - Main thread: GUI event loop
         - Tray thread: System tray icon
-        - Hotkey thread: Global keyboard hooks
         
         All crypto operations are thread-safe via the crypto module.
     """
@@ -94,8 +80,6 @@ class AnonIT:
         self.tray_icon: Optional[pystray.Icon] = None
         self.running = True
         self._lock = threading.Lock()
-        self.kb_controller = Controller()
-        self.hotkey_listener = None
         
         # Register cleanup handler for graceful shutdown
         atexit.register(self._cleanup)
@@ -167,245 +151,6 @@ class AnonIT:
             logger.error(f"GUI decryption failed: {e}")
             return None
     
-    def _encrypt_selection(self) -> None:
-        """
-        Encrypt currently selected text via hotkey.
-        
-        Workflow:
-        1. Clear clipboard
-        2. Copy selected text (Ctrl+C)
-        3. Encrypt the text
-        4. Paste encrypted text (Ctrl+V)
-        
-        If no key is set, opens the GUI for key entry.
-        """
-        if not has_key():
-            logger.info("No key set, opening GUI")
-            self._show_gui()
-            return
-        
-        with self._lock:
-            try:
-                # Small delay to ensure hotkey doesn't interfere
-                time.sleep(HOTKEY_DELAY)
-                
-                # Clear clipboard to detect if copy succeeds
-                pyperclip.copy('')
-                
-                # Copy selected text
-                with self.kb_controller.pressed(Key.ctrl):
-                    self.kb_controller.tap('c')
-                time.sleep(CLIPBOARD_DELAY)
-                
-                text = pyperclip.paste()
-                
-                if not text:
-                    logger.debug("No text selected for encryption")
-                    return
-                
-                # Don't re-encrypt already encrypted text
-                if is_encrypted(text):
-                    logger.debug("Text already encrypted, skipping")
-                    return
-                
-                # Encrypt and paste
-                encrypted = encrypt(text)
-                pyperclip.copy(encrypted)
-                
-                with self.kb_controller.pressed(Key.ctrl):
-                    self.kb_controller.tap('v')
-                
-                logger.info(f"Hotkey encryption: {len(text)} -> {len(encrypted)} chars")
-                
-            except Exception as e:
-                logger.error(f"Hotkey encryption failed: {e}")
-    
-    def _decrypt_selection(self) -> None:
-        """
-        Decrypt currently selected text via hotkey.
-        
-        Workflow:
-        1. Clear clipboard
-        2. Copy selected text (Ctrl+C)
-        3. Decrypt the text
-        4. Show popup with decrypted text (no replacement)
-        
-        If no key is set, opens the GUI for key entry.
-        """
-        if not has_key():
-            logger.info("No key set, opening GUI")
-            self._show_gui()
-            return
-        
-        with self._lock:
-            try:
-                time.sleep(HOTKEY_DELAY)
-                
-                pyperclip.copy('')
-                with self.kb_controller.pressed(Key.ctrl):
-                    self.kb_controller.tap('c')
-                time.sleep(CLIPBOARD_DELAY)
-                
-                text = pyperclip.paste()
-                
-                if not text:
-                    logger.debug("No text selected for decryption")
-                    return
-                
-                if not is_encrypted(text):
-                    logger.debug("Text not encrypted, skipping")
-                    return
-                
-                decrypted = decrypt(text)
-                
-                # Show popup instead of replacing text
-                self._show_decrypt_popup(decrypted)
-                
-                logger.info(f"Hotkey decryption: {len(text)} -> {len(decrypted)} chars")
-                
-            except Exception as e:
-                logger.error(f"Hotkey decryption failed: {e}")
-    
-    def _show_decrypt_popup(self, text: str) -> None:
-        """Show a small popup window with decrypted text in a separate thread."""
-        
-        def create_popup():
-            from PyQt6.QtWidgets import (
-                QApplication, QWidget, QVBoxLayout, QHBoxLayout,
-                QLabel, QTextEdit, QPushButton
-            )
-            from PyQt6.QtCore import Qt, QTimer, QSize
-            from PyQt6.QtGui import QFont, QGuiApplication
-            from icons import Icons
-            
-            app = QApplication([])
-            
-            # Stylesheet
-            style = """
-            QWidget {
-                background-color: #0a0a0a;
-                color: #ffffff;
-                font-family: 'Segoe UI', sans-serif;
-            }
-            QLabel#header {
-                color: #00d4aa;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QTextEdit {
-                background-color: #1e1e1e;
-                border: 1px solid #2a2a2a;
-                border-radius: 8px;
-                padding: 12px;
-                color: #ffffff;
-                font-family: 'Consolas', monospace;
-                font-size: 12px;
-                selection-background-color: #00d4aa;
-            }
-            QPushButton#copy {
-                background-color: #00d4aa;
-                color: #0a0a0a;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 24px;
-                font-weight: bold;
-                font-size: 12px;
-            }
-            QPushButton#copy:hover {
-                background-color: #00f5c4;
-            }
-            QPushButton#close {
-                background-color: #2a2a2a;
-                color: #888888;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 24px;
-                font-size: 12px;
-            }
-            QPushButton#close:hover {
-                background-color: #3a3a3a;
-                color: #ffffff;
-            }
-            """
-            
-            popup = QWidget()
-            popup.setWindowTitle("Decrypted")
-            popup.setStyleSheet(style)
-            popup.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Window)
-            
-            # Size based on content
-            width = min(max(400, len(text) * 7), 600)
-            height = min(max(200, text.count('\n') * 25 + 150), 450)
-            popup.resize(width, height)
-            
-            # Center on screen
-            screen = QGuiApplication.primaryScreen().geometry()
-            x = (screen.width() - width) // 2
-            y = (screen.height() - height) // 2
-            popup.move(x, y)
-            
-            layout = QVBoxLayout(popup)
-            layout.setContentsMargins(20, 20, 20, 20)
-            layout.setSpacing(12)
-            
-            # Header with icon
-            header_layout = QHBoxLayout()
-            header_icon = QLabel()
-            header_icon.setPixmap(Icons.unlock(20, "#00d4aa").pixmap(QSize(20, 20)))
-            header_layout.addWidget(header_icon)
-            header = QLabel("Decrypted Message")
-            header.setObjectName("header")
-            header_layout.addWidget(header)
-            header_layout.addStretch()
-            layout.addLayout(header_layout)
-            
-            # Text area
-            text_area = QTextEdit()
-            text_area.setPlainText(text)
-            text_area.setReadOnly(False)
-            layout.addWidget(text_area)
-            
-            # Buttons
-            btn_layout = QHBoxLayout()
-            btn_layout.setSpacing(10)
-            
-            copy_btn = QPushButton(" Copy")
-            copy_btn.setObjectName("copy")
-            copy_btn.setIcon(Icons.copy(16, "#0a0a0a"))
-            copy_btn.setIconSize(QSize(16, 16))
-            copy_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            
-            def copy_text():
-                app.clipboard().setText(text)
-                copy_btn.setIcon(Icons.check(16, "#0a0a0a"))
-                copy_btn.setText(" Copied!")
-                QTimer.singleShot(1000, lambda: (copy_btn.setIcon(Icons.copy(16, "#0a0a0a")), copy_btn.setText(" Copy")))
-            
-            copy_btn.clicked.connect(copy_text)
-            btn_layout.addWidget(copy_btn)
-            
-            btn_layout.addStretch()
-            
-            close_btn = QPushButton(" Close")
-            close_btn.setObjectName("close")
-            close_btn.setIcon(Icons.x(16, "#888888"))
-            close_btn.setIconSize(QSize(16, 16))
-            close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            close_btn.clicked.connect(popup.close)
-            btn_layout.addWidget(close_btn)
-            
-            layout.addLayout(btn_layout)
-            
-            # Auto-close after 30 seconds
-            QTimer.singleShot(30000, popup.close)
-            
-            popup.show()
-            app.exec()
-        
-        # Run popup in separate thread to not block hotkeys
-        popup_thread = threading.Thread(target=create_popup, daemon=True)
-        popup_thread.start()
-    
     def _show_gui(self) -> None:
         """Show the GUI window."""
         if self.gui:
@@ -417,10 +162,6 @@ class AnonIT:
         Fast cleanup - skip slow memory operations.
         """
         logger.info("Cleaning up...")
-        
-        # Stop hotkey listener
-        if self.hotkey_listener:
-            self.hotkey_listener.stop()
         
         # Fast key clear (skip slow memory protection)
         try:
@@ -434,10 +175,6 @@ class AnonIT:
         """Exit the application immediately."""
         import os
         
-        # Stop hotkey listener
-        if hasattr(self, 'hotkey_listener') and self.hotkey_listener:
-            self.hotkey_listener.stop()
-        
         # Clear key from memory (fast)
         try:
             clear_encryption_key()
@@ -447,20 +184,6 @@ class AnonIT:
         # Force exit immediately - skip all slow cleanup
         # pystray.stop() and PyQt6 cleanup are too slow
         os._exit(0)
-    
-    def _setup_hotkeys(self) -> None:
-        """Register global hotkeys using pynput."""
-        # Define hotkey map
-        # pynput runs in a separate thread so we don't need to worry about blocking main thread
-        # causing lag. It also doesn't suppress keys by default which fixes the shift lag.
-        self.hotkey_map = {
-            '<ctrl>+<alt>+e': self._encrypt_selection,
-            '<ctrl>+<alt>+d': self._decrypt_selection
-        }
-        
-        self.hotkey_listener = GlobalHotKeys(self.hotkey_map)
-        self.hotkey_listener.start()
-        logger.info("Global hotkeys registered via pynput")
     
     def _create_tray_menu(self) -> pystray.Menu:
         """Create the system tray context menu."""
@@ -475,14 +198,10 @@ class AnonIT:
         Start the AnonIT application.
         
         This method:
-        1. Registers global hotkeys
-        2. Creates the GUI
-        3. Starts the system tray icon
-        4. Runs the GUI event loop (blocking)
+        1. Creates the GUI
+        2. Starts the system tray icon
+        3. Runs the GUI event loop (blocking)
         """
-        # Register hotkeys
-        self._setup_hotkeys()
-        
         # Create GUI
         self.gui = AnonITGUI(
             on_key_change=self._on_key_change,
@@ -511,10 +230,7 @@ class AnonIT:
         print("=" * 50)
         print("  AnonIT - Secure Text Encryption")
         print("=" * 50)
-        print("  Hotkeys:")
-        print("    Ctrl+Alt+E  →  Encrypt selected text")
-        print("    Ctrl+Alt+D  →  Decrypt selected text")
-        print("")
+        print("  Use the GUI to encrypt and decrypt text.")
         print("  Keys are stored in memory only.")
         print("  They will be securely wiped on exit.")
         print("=" * 50)

@@ -2,16 +2,15 @@
 
 > **Privacy on top of every messenger.**
 
-A simple encryption tool that lets you encrypt and decrypt text anywhere on your system using hotkeys. WhatsApp, Discord, Telegram, Instagram DMs — doesn't matter. Your messages, your encryption, your keys.
+A simple encryption tool with a modern dark-themed GUI. WhatsApp, Discord, Telegram, Instagram DMs — doesn't matter. Your messages, your encryption, your keys.
 
-I built this because I wanted a quick way to encrypt sensitive info without opening a separate app every time. Just select text, hit a hotkey, done.
+I built this because I wanted a quick way to encrypt sensitive info without relying on third-party websites.
 
 ## What it does
 
-- **Ctrl+Alt+E** → Encrypts selected text
-- **Ctrl+Alt+D** → Decrypts selected text
-
-Works in any application - browsers, text editors, chat apps, wherever you can select text.
+- Encrypt and decrypt text using the GUI
+- Copy encrypted/decrypted text with one click
+- Runs quietly in your system tray
 
 ## Security
 
@@ -33,8 +32,8 @@ Or grab the pre-built exe from [Releases](https://github.com/Zinvera/AnonIT/rele
 
 1. Start AnonIT
 2. Enter your encryption key in the GUI
-3. Select any text and press **Ctrl+Alt+E** to encrypt
-4. Select encrypted text and press **Ctrl+Alt+D** to decrypt
+3. Paste or type text to encrypt/decrypt
+4. Use the buttons to process and copy the result
 
 The app sits in your system tray when minimized.
 
@@ -50,16 +49,16 @@ The exe will be in the `dist` folder.
 ## Requirements
 
 - Python 3.8+
-- Windows (uses Windows-specific keyboard hooks)
+- Windows
 
 ## Dependencies
 
 - `pycryptodome` - AES encryption
 - `argon2-cffi` - Key derivation
-- `pynput` - Global hotkeys (low latency)
 - `pyperclip` - Clipboard access
 - `pystray` - System tray icon
 - `Pillow` - Icon rendering
+- `PyQt6` - Modern GUI
 
 ## License
 
