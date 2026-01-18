@@ -4,7 +4,7 @@
 AnonIT - Secure Text Encryption Tool
 """
 
-__version__ = "1.4.1"
+__version__ = "1.4.2"
 
 import atexit
 import logging
@@ -155,8 +155,15 @@ class AnonIT:
             btn_frame.pack(padx=20, pady=(0, 20), fill='x')
             
             def copy_text():
-                root.clipboard_clear()
-                root.clipboard_append(text)
+                try:
+                    pyperclip.copy(text)
+                except Exception as e:
+                    logger.error(f"Clipboard error: {e}")
+                    # Fallback
+                    root.clipboard_clear()
+                    root.clipboard_append(text)
+                    root.update()
+                
                 copy_btn.config(text="✓ Copied!")
                 root.after(1500, lambda: copy_btn.config(text="📋 Copy"))
             
