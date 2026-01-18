@@ -8,8 +8,8 @@ I built this because I wanted a quick way to encrypt sensitive info without open
 
 ## What it does
 
-- **Ctrl+Shift+E** → Encrypts selected text
-- **Ctrl+Shift+D** → Decrypts selected text
+- **Ctrl+Alt+E** → Encrypts selected text
+- **Ctrl+Alt+D** → Decrypts selected text
 
 Works in any application - browsers, text editors, chat apps, wherever you can select text.
 
@@ -33,8 +33,8 @@ Or grab the pre-built exe from [Releases](https://github.com/Zinvera/AnonIT/rele
 
 1. Start AnonIT
 2. Enter your encryption key in the GUI
-3. Select any text and press **Ctrl+Shift+E** to encrypt
-4. Select encrypted text and press **Ctrl+Shift+D** to decrypt
+3. Select any text and press **Ctrl+Alt+E** to encrypt
+4. Select encrypted text and press **Ctrl+Alt+D** to decrypt
 
 The app sits in your system tray when minimized.
 
@@ -56,7 +56,7 @@ The exe will be in the `dist` folder.
 
 - `pycryptodome` - AES encryption
 - `argon2-cffi` - Key derivation
-- `keyboard` - Global hotkeys
+- `pynput` - Global hotkeys (low latency)
 - `pyperclip` - Clipboard access
 - `pystray` - System tray icon
 - `Pillow` - Icon rendering
