@@ -19,14 +19,15 @@
 </p>
 
 <p align="center">
-  <b>Encrypt any text with one hotkey. Works with WhatsApp, Discord, Telegram, Signal, Instagram DMs — any app.</b>
+  <b>Encrypt any text with one hotkey — OR — run your own secure messenger server.</b><br>
+  <sub>Works with WhatsApp, Discord, Telegram, Signal, Instagram DMs — any app. 100% Open Source.</sub>
 </p>
 
 <p align="center">
   <a href="#-quick-start">Quick Start</a> •
   <a href="#-features">Features</a> •
   <a href="#-installation">Installation</a> •
-  <a href="#-how-it-works">How It Works</a> •
+  <a href="#%EF%B8%8F-self-hosted-messenger">Self-Hosted Messenger</a> •
   <a href="#-security">Security</a> •
   <a href="#-faq">FAQ</a>
 </p>
@@ -86,6 +87,13 @@ Works with **any application** that supports text:
 - **Memory-only keys** — Never written to disk
 - **Auto-wipe** — Keys cleared when app closes
 
+### 💬 Built-in Secure Messenger
+- **Self-hosted server** — Run your own infrastructure
+- **End-to-end encrypted** — Server never sees plaintext
+- **No metadata logging** — Zero IP/user tracking
+- **Panic button** — Instant wipe of all data
+- **Docker support** — Deploy in minutes
+
 ---
 
 ## 📦 Installation
@@ -118,6 +126,101 @@ python main.py
 pip install pyinstaller
 pyinstaller AnonIT.spec --clean
 # Output: dist/AnonIT.exe
+```
+
+---
+
+## 🖥️ Self-Hosted Messenger
+
+AnonIT includes a complete secure messaging system. Host your own server — **you control everything**.
+
+### Why Self-Host?
+
+| Public Messengers | AnonIT Self-Hosted |
+|-------------------|-------------------|
+| ❌ Company controls servers | ✅ YOU control the server |
+| ❌ Metadata logged | ✅ Zero logging by design |
+| ❌ Trust third parties | ✅ Trust no one but yourself |
+| ❌ Can be shut down | ✅ Your infrastructure |
+
+### Server Features
+
+- 🔐 **End-to-end encryption** — Server NEVER sees plaintext
+- 🚫 **No IP logging** — Privacy by design
+- ⏰ **Auto-expiry** — Messages deleted after 72 hours
+- 🚨 **Panic button** — Instant wipe of all user data
+- 🐳 **Docker ready** — One command deployment
+- 🧅 **Tor compatible** — Run as hidden service
+
+### Quick Server Setup
+
+#### Option 1: Docker (Recommended)
+
+```bash
+cd AnonIT-Server
+docker-compose up -d
+```
+
+#### Option 2: Manual
+
+```bash
+cd AnonIT-Server
+pip install -r requirements.txt
+python server.py
+```
+
+#### Option 3: Linux Service
+
+```bash
+cd AnonIT-Server
+sudo ./install.sh
+```
+
+### Server Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ANONIT_HOST` | `0.0.0.0` | Bind address |
+| `ANONIT_PORT` | `8765` | WebSocket port |
+| `ANONIT_DATA` | `./data` | Data directory |
+| `ANONIT_LOG_LEVEL` | `INFO` | Log level |
+
+### Production Deployment
+
+#### With Nginx + TLS
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name your-domain.com;
+    
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+    
+    location / {
+        proxy_pass http://127.0.0.1:8765;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 86400;
+    }
+}
+```
+
+#### As Tor Hidden Service
+
+```bash
+# Add to /etc/tor/torrc
+HiddenServiceDir /var/lib/tor/anonit/
+HiddenServicePort 8765 127.0.0.1:8765
+```
+
+### Connect Client to Your Server
+
+```bash
+python main.py --server wss://your-domain.com
+# or for Tor
+python main.py --server ws://your-onion-address.onion:8765
 ```
 
 ---
@@ -212,7 +315,13 @@ Messages encrypted with a lost key cannot be recovered. This is by design — th
 <details>
 <summary><b>Does this work on Mac/Linux?</b></summary>
 
-Currently Windows only. Cross-platform support is planned for future releases.
+Currently Windows only for the client. The server runs on any platform (Linux recommended for production). Cross-platform client support is planned.
+</details>
+
+<details>
+<summary><b>How do I set up my own server?</b></summary>
+
+See the [Self-Hosted Messenger](#%EF%B8%8F-self-hosted-messenger) section. The quickest way is Docker: `cd AnonIT-Server && docker-compose up -d`
 </details>
 
 <details>
@@ -229,10 +338,13 @@ AES-256 is considered quantum-resistant for symmetric encryption. However, if qu
 - [x] F8 hotkey integration
 - [x] System tray support
 - [x] Modern dark GUI
+- [x] Self-hosted messenger server
+- [x] Docker deployment
+- [x] Tor hidden service support
 - [ ] Cross-platform support (Mac, Linux)
 - [ ] Multiple key profiles
 - [ ] File encryption
-- [ ] Secure messenger integration
+- [ ] Mobile apps (Android/iOS)
 
 ---
 
