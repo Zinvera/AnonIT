@@ -1,73 +1,275 @@
-# AnonIT
+<p align="center">
+  <img src="iconmain.png" alt="AnonIT Logo" width="120" height="120">
+</p>
 
-> **Privacy on top of every messenger.**
+<h1 align="center">AnonIT</h1>
 
-A simple encryption tool with a modern dark-themed GUI and F8 hotkey. WhatsApp, Discord, Telegram, Instagram DMs — doesn't matter. Your messages, your encryption, your keys.
+<p align="center">
+  <strong>🔐 Universal Text Encryption for Any Messenger</strong>
+</p>
 
-I built this because I wanted a quick way to encrypt sensitive info without relying on third-party websites.
+<p align="center">
+  <a href="https://github.com/Zinvera/AnonIT/releases"><img src="https://img.shields.io/github/v/release/Zinvera/AnonIT?style=flat-square&color=blue" alt="Release"></a>
+  <a href="https://github.com/Zinvera/AnonIT/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Zinvera/AnonIT?style=flat-square&color=green" alt="License MIT"></a>
+  <a href="https://github.com/Zinvera/AnonIT/releases"><img src="https://img.shields.io/github/downloads/Zinvera/AnonIT/total?style=flat-square&color=brightgreen" alt="Downloads"></a>
+  <a href="https://github.com/Zinvera/AnonIT/stargazers"><img src="https://img.shields.io/github/stars/Zinvera/AnonIT?style=flat-square&color=yellow" alt="Stars"></a>
+  <img src="https://img.shields.io/badge/platform-Windows-blue?style=flat-square" alt="Platform Windows">
+  <img src="https://img.shields.io/badge/python-3.8+-blue?style=flat-square" alt="Python 3.8+">
+  <img src="https://img.shields.io/badge/encryption-AES--256--GCM-green?style=flat-square" alt="AES-256-GCM">
+</p>
 
-## What it does
+<p align="center">
+  <b>Encrypt any text with one hotkey. Works with WhatsApp, Discord, Telegram, Signal, Instagram DMs — any app.</b>
+</p>
 
-- **F8 hotkey** — Select text anywhere, press F8:
-  - Normal text → gets encrypted and pasted back
-  - Encrypted text → gets decrypted (shown in popup)
-- GUI for manual encrypt/decrypt
-- Runs quietly in your system tray
+<p align="center">
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-features">Features</a> •
+  <a href="#-installation">Installation</a> •
+  <a href="#-how-it-works">How It Works</a> •
+  <a href="#-security">Security</a> •
+  <a href="#-faq">FAQ</a>
+</p>
 
-## Security
+---
 
-- AES-256-GCM encryption (the good stuff)
-- Argon2id for key derivation (resistant to GPU attacks)
-- Keys only exist in memory, never written to disk
-- Keys are wiped when you close the app
+## 🎯 Why AnonIT?
 
-## Installation
+| Problem | AnonIT Solution |
+|---------|-----------------|
+| ❌ Messengers can read your messages | ✅ End-to-end encryption YOU control |
+| ❌ Online encryption tools are sketchy | ✅ 100% offline, open-source |
+| ❌ Encryption is complicated | ✅ One hotkey: **F8** |
+| ❌ Keys stored insecurely | ✅ Keys exist only in RAM, wiped on exit |
+
+**Stop trusting third parties with your sensitive data.** AnonIT gives you military-grade encryption (AES-256-GCM) that works on top of ANY messaging platform.
+
+---
+
+## ⚡ Quick Start
 
 ```bash
+# Option 1: Download ready-to-use executable
+# → https://github.com/Zinvera/AnonIT/releases
+
+# Option 2: Run from source
 pip install -r requirements.txt
 python main.py
 ```
 
-Or grab the pre-built exe from [Releases](https://github.com/Zinvera/AnonIT/releases).
+**That's it!** Enter your encryption key, select text anywhere, press **F8**.
 
-## How to use
+---
 
-1. Start AnonIT
-2. Enter your encryption key in the GUI
-3. Select any text and press **F8**:
-   - Plain text → encrypted and pasted
-   - Encrypted text → decrypted and shown in popup
+## ✨ Features
 
-The app sits in your system tray when minimized.
+### 🔑 One-Hotkey Encryption
+- **Select text → Press F8 → Done**
+- Plain text gets encrypted and auto-pasted
+- Encrypted text gets decrypted (shown in secure popup)
 
-## Building from source
+### 🌐 Universal Compatibility
+Works with **any application** that supports text:
+- 💬 **Messengers**: WhatsApp, Telegram, Discord, Signal, Instagram DMs
+- 📧 **Email**: Gmail, Outlook, ProtonMail
+- 📝 **Notes**: Notion, Obsidian, OneNote
+- 💻 **Anywhere**: Browsers, text editors, any input field
+
+### 🖥️ Modern Dark GUI
+- Clean PyQt6 interface
+- Manual encrypt/decrypt mode
+- System tray integration — runs silently in background
+
+### 🔒 Zero-Trust Security
+- **AES-256-GCM** — Military-grade authenticated encryption
+- **Argon2id** — GPU-resistant key derivation (winner of Password Hashing Competition)
+- **Memory-only keys** — Never written to disk
+- **Auto-wipe** — Keys cleared when app closes
+
+---
+
+## 📦 Installation
+
+### Prerequisites
+- Windows 10/11
+- Python 3.8+ (for source installation)
+
+### Option 1: Executable (Recommended)
+
+Download the latest `.exe` from [**Releases**](https://github.com/Zinvera/AnonIT/releases) — no installation required.
+
+### Option 2: From Source
+
+```bash
+# Clone repository
+git clone https://github.com/Zinvera/AnonIT.git
+cd AnonIT
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run
+python main.py
+```
+
+### Option 3: Build Executable
 
 ```bash
 pip install pyinstaller
 pyinstaller AnonIT.spec --clean
+# Output: dist/AnonIT.exe
 ```
-
-The exe will be in the `dist` folder.
-
-## Requirements
-
-- Python 3.8+
-- Windows
-
-## Dependencies
-
-- `pycryptodome` - AES encryption
-- `argon2-cffi` - Key derivation
-- `keyboard` - F8 hotkey
-- `pyperclip` - Clipboard access
-- `pystray` - System tray icon
-- `Pillow` - Icon rendering
-- `PyQt6` - Modern GUI
-
-## License
-
-MIT - do whatever you want with it.
 
 ---
 
-Made because copy-pasting into encryption websites felt sketchy.
+## 🔧 How It Works
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  1. Enter your secret key in AnonIT                         │
+│  2. Select any text in any application                      │
+│  3. Press F8                                                 │
+│     ├─ Plain text?    → Encrypted & pasted back             │
+│     └─ Encrypted?     → Decrypted & shown in popup          │
+│  4. Share encrypted text via any messenger                  │
+│  5. Recipient with same key presses F8 to decrypt           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Encryption Flow
+```
+Your Message → Argon2id(Key) → AES-256-GCM → Base64 → Clipboard
+```
+
+### Decryption Flow
+```
+Encrypted Text → Base64 → AES-256-GCM → Argon2id(Key) → Original Message
+```
+
+---
+
+## 🛡️ Security
+
+### Cryptographic Standards
+
+| Component | Algorithm | Why |
+|-----------|-----------|-----|
+| **Encryption** | AES-256-GCM | Authenticated encryption, NIST approved |
+| **Key Derivation** | Argon2id | Winner of PHC, resistant to GPU/ASIC attacks |
+| **Encoding** | Base64 | Safe for any text field |
+
+### Security Guarantees
+
+- ✅ **No network access** — 100% offline operation
+- ✅ **No key storage** — Keys exist only in RAM
+- ✅ **No telemetry** — Zero data collection
+- ✅ **Open source** — Audit the code yourself
+- ✅ **Memory wiping** — Sensitive data cleared on exit
+
+### What AnonIT Does NOT Protect Against
+
+- Keyloggers on your system
+- Screen capture malware
+- Physical access to unlocked device
+- Weak passwords/keys
+
+---
+
+## 📋 Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `pycryptodome` | AES-256-GCM encryption |
+| `argon2-cffi` | Argon2id key derivation |
+| `keyboard` | Global F8 hotkey |
+| `pyperclip` | Clipboard operations |
+| `pystray` | System tray icon |
+| `Pillow` | Icon rendering |
+| `PyQt6` | Modern GUI framework |
+
+---
+
+## ❓ FAQ
+
+<details>
+<summary><b>Is this safer than WhatsApp's built-in encryption?</b></summary>
+
+WhatsApp uses end-to-end encryption, but Meta controls the keys and implementation. With AnonIT, YOU control the encryption — even if WhatsApp is compromised, your messages remain encrypted with your personal key.
+</details>
+
+<details>
+<summary><b>Can I use different keys for different contacts?</b></summary>
+
+Yes! Simply change the key in the GUI before encrypting. Share different keys with different people for compartmentalized security.
+</details>
+
+<details>
+<summary><b>What happens if I forget my key?</b></summary>
+
+Messages encrypted with a lost key cannot be recovered. This is by design — there's no backdoor.
+</details>
+
+<details>
+<summary><b>Does this work on Mac/Linux?</b></summary>
+
+Currently Windows only. Cross-platform support is planned for future releases.
+</details>
+
+<details>
+<summary><b>Is the encryption quantum-resistant?</b></summary>
+
+AES-256 is considered quantum-resistant for symmetric encryption. However, if quantum computing concerns you, use longer keys and stay updated on post-quantum cryptography developments.
+</details>
+
+---
+
+## 🗺️ Roadmap
+
+- [x] Core encryption/decryption
+- [x] F8 hotkey integration
+- [x] System tray support
+- [x] Modern dark GUI
+- [ ] Cross-platform support (Mac, Linux)
+- [ ] Multiple key profiles
+- [ ] File encryption
+- [ ] Secure messenger integration
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Good First Issues
+Look for issues labeled `good first issue` or `help wanted`.
+
+---
+
+## 📄 License
+
+[MIT License](LICENSE) — Use it however you want.
+
+---
+
+## ⭐ Star History
+
+If AnonIT helps you, consider giving it a star! It helps others discover the project.
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Zinvera/AnonIT&type=Date)](https://star-history.com/#Zinvera/AnonIT&Date)
+
+---
+
+<p align="center">
+  <b>Built because copy-pasting into encryption websites felt sketchy.</b>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Zinvera/AnonIT/issues">Report Bug</a> •
+  <a href="https://github.com/Zinvera/AnonIT/issues">Request Feature</a>
+</p>
