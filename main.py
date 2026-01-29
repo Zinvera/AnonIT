@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-AnonIT - Secure Text Encryption Tool
+AnonIT - Secure Text Encryption Tool & Messenger
 """
 
-__version__ = "1.4.2"
+__version__ = "1.5.0"
 
 import atexit
 import logging
 import sys
 import threading
 import time
+import argparse
 from typing import Optional
 
 import pyperclip
@@ -34,15 +35,33 @@ logger = logging.getLogger(__name__)
 
 CLIPBOARD_DELAY = 0.15
 
+# Default server - import from messenger config
+try:
+    from messenger.config import DEFAULT_SERVER
+except ImportError:
+    DEFAULT_SERVER = "ws://localhost:8765"
+
+
 class AnonIT:
-    def __init__(self) -> None:
+    def __init__(self, server_url: Optional[str] = None, enable_messenger: bool = True) -> None:
         self.gui: Optional[AnonITGUI] = None
         self.tray_icon: Optional[pystray.Icon] = None
         self.running = True
         self._lock = threading.Lock()
         
+        # Messenger
+        self.messenger_client = None
+        self.server_url = server_url or DEFAULT_SERVER
+        self.enable_messenger = enable_messenger
+        
         atexit.register(self._cleanup)
-        logger.info("AnonIT initialized")
+        logger.info(f"AnonIT v{__version__} initialized")
+    
+    def _init_messenger(self):
+        """Initialize messenger - now handled by GUI widget."""
+        # Messenger client is now created by MessengerWidget when user clicks Connect
+        if self.enable_messenger:
+            logger.info("Messenger module enabled")
     
     def _on_key_change(self, password: str) -> None:
         try:
@@ -124,19 +143,16 @@ class AnonIT:
             root.geometry("800x800")
             root.attributes('-topmost', True)
             
-            # Center on screen
             root.update_idletasks()
             x = (root.winfo_screenwidth() - 800) // 2
             y = (root.winfo_screenheight() - 800) // 2
             root.geometry(f"+{x}+{y}")
             
-            # Header
             header = tk.Label(root, text="🔓 Decrypted Message", 
                              font=('Segoe UI', 14, 'bold'),
                              fg='#00d4aa', bg='#0a0a0a')
             header.pack(pady=(20, 10), padx=20, anchor='w')
             
-            # Text area container (for border)
             text_frame = tk.Frame(root, bg='#2a2a2a', padx=1, pady=1)
             text_frame.pack(padx=20, pady=(0, 20), fill='both', expand=True)
             
@@ -148,9 +164,7 @@ class AnonIT:
                                                    relief='flat', bd=10)
             text_area.pack(fill='both', expand=True)
             text_area.insert('1.0', text)
-            # Make read-only after insert if desired, but editable is usually fine for copying
             
-            # Button frame
             btn_frame = tk.Frame(root, bg='#0a0a0a')
             btn_frame.pack(padx=20, pady=(0, 20), fill='x')
             
@@ -159,7 +173,6 @@ class AnonIT:
                     pyperclip.copy(text)
                 except Exception as e:
                     logger.error(f"Clipboard error: {e}")
-                    # Fallback
                     root.clipboard_clear()
                     root.clipboard_append(text)
                     root.update()
@@ -192,6 +205,8 @@ class AnonIT:
         try:
             keyboard.unhook_all()
             clear_encryption_key()
+            if self.messenger_client:
+                self.messenger_client.stop()
         except: pass
     
     def _quit_app(self) -> None:
@@ -209,11 +224,17 @@ class AnonIT:
     def run(self) -> None:
         keyboard.add_hotkey('f8', self._handle_f8_hotkey, suppress=False)
         
+        # Initialize messenger
+        self._init_messenger()
+        
         self.gui = AnonITGUI(
             on_key_change=self._on_key_change,
             on_encrypt=self._handle_encrypt,
             on_decrypt=self._handle_decrypt
         )
+        
+        # Start messenger - now handled by GUI
+        # (user clicks Connect button)
         
         def run_tray():
             try:
@@ -225,22 +246,39 @@ class AnonIT:
         
         threading.Thread(target=run_tray, daemon=True).start()
         
-        print("-" * 30)
-        print("AnonIT running...")
-        print("F8: Encrypt/Decrypt")
-        print("-" * 30)
+        print("-" * 40)
+        print(f"AnonIT v{__version__} running...")
+        print("F8: Encrypt/Decrypt selected text")
+        if self.enable_messenger:
+            print(f"Messenger: {self.server_url}")
+        print("-" * 40)
         
         self.gui.mainloop()
 
+
 def main() -> int:
+    parser = argparse.ArgumentParser(description="AnonIT - Secure Encryption & Messenger")
+    parser.add_argument('--server', '-s', type=str, default=DEFAULT_SERVER,
+                        help=f'Messenger server URL (default: {DEFAULT_SERVER})')
+    parser.add_argument('--no-messenger', action='store_true',
+                        help='Disable messenger (local encryption only)')
+    parser.add_argument('--version', '-v', action='version', version=f'AnonIT {__version__}')
+    
+    args = parser.parse_args()
+    
     try:
-        AnonIT().run()
+        app = AnonIT(
+            server_url=args.server,
+            enable_messenger=not args.no_messenger
+        )
+        app.run()
         return 0
     except KeyboardInterrupt:
         return 0
     except Exception as e:
         logger.exception(f"Fatal: {e}")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -2,7 +2,7 @@
 """
 AnonIT PyInstaller Spec File
 =============================
-Optimized build configuration excluding unnecessary dependencies.
+Build configuration for AnonIT with Messenger support.
 """
 
 block_cipher = None
@@ -11,14 +11,35 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('icon.ico', '.'), ('iconmain.png', '.')],
+    datas=[
+        ('icon.ico', '.'), 
+        ('iconmain.png', '.'),
+        ('messenger', 'messenger'),  # Include messenger module
+    ],
     hiddenimports=[
+        # PyQt6
         'pystray._win32',
         'PyQt6',
         'PyQt6.QtCore',
         'PyQt6.QtGui',
         'PyQt6.QtWidgets',
         'PyQt6.sip',
+        # Messenger dependencies
+        'websockets',
+        'websockets.client',
+        'websockets.server',
+        'cryptography',
+        'cryptography.hazmat.primitives',
+        'cryptography.hazmat.primitives.asymmetric.x25519',
+        'cryptography.hazmat.primitives.ciphers.aead',
+        'cryptography.hazmat.primitives.kdf.hkdf',
+        'cryptography.hazmat.backends',
+        # Messenger module
+        'messenger',
+        'messenger.client',
+        'messenger.protocol',
+        'messenger.gui_messenger',
+        'messenger.config',
     ],
     hookspath=[],
     hooksconfig={},

@@ -1,0 +1,31 @@
+[Unit]
+Description=AnonIT Secure Messenger Server
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=anonit
+Group=anonit
+WorkingDirectory=/opt/anonit-server
+ExecStart=/opt/anonit-server/venv/bin/python server.py
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/anonit-server/data
+
+# Environment
+Environment=ANONIT_HOST=0.0.0.0
+Environment=ANONIT_PORT=8765
+Environment=ANONIT_DATA=/opt/anonit-server/data
+Environment=ANONIT_LOG_LEVEL=INFO
+
+[Install]
+WantedBy=multi-user.target
